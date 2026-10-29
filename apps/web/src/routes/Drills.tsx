@@ -1,7 +1,8 @@
-// The drills: a hub with a card for each kind (P7-04), and their setup pages. Sight-reading
-// (P5-05, ADR 0015): choose a clef, a key and how far from middle C the notes go, then read new
-// notes from the staff. Chords (P7-04, ADR 0022) are in ChordDrills.tsx, scales (P7-19, ADR 0024)
-// in ScaleDrills.tsx. Every drill is generated on this device; the choices are remembered.
+// The drills: a hub with a card for each kind (P7-04) and, when anything is due, a line to review
+// it (P7-27, ADR 0026), and their setup pages. Sight-reading (P5-05, ADR 0015): choose a clef, a
+// key and how far from middle C the notes go, then read new notes from the staff. Chords (P7-04,
+// ADR 0022) are in ChordDrills.tsx, scales (P7-19, ADR 0024) in ScaleDrills.tsx. Every drill is
+// generated on this device; the choices are remembered.
 import { useEffect, useState } from 'react';
 import { ChartNoAxesColumnIncreasing, Music, Play, Piano } from 'lucide-react';
 import {
@@ -14,8 +15,11 @@ import {
   saveDrillPrefs,
 } from '../practice/drill';
 import type { DrillPrefs } from '../practice/drill';
+import { loadChordDrillPrefs, loadChordStats } from '../practice/chord-drill';
+import { loadScaleDrillPrefs, loadScaleStats } from '../practice/scale-drill';
+import { chordReviewRoute, dueChords, dueScales, scaleReviewRoute } from '../practice/review';
 import { href } from '../lib/router';
-import type { DrillPage } from '../lib/router';
+import type { DrillPage, Route } from '../lib/router';
 import { BackToDrills, ChordDrills } from './ChordDrills';
 import { ScaleDrills } from './ScaleDrills';
 import { Setting, Toggle } from '../ui/SettingRow';
@@ -31,6 +35,7 @@ export function Drills({ page }: { page?: DrillPage }) {
       <p className="lead">
         {t('Short exercises made on this device, new every time. Choose what to practise.')}
       </p>
+      <DueForReview />
       <div className="drill-cards">
         <a className="card drill-card" href={href({ name: 'drills', page: 'sight-reading' })}>
           <Music aria-hidden="true" />
@@ -52,6 +57,54 @@ export function Drills({ page }: { page?: DrillPage }) {
           </p>
         </a>
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Due for review: 3 chords, 1 scale" and Review now, only when something is due (P7-27). Review
+ * now opens the chords first, with the learner's own choices; the scales once no chords are due.
+ * Due kinds outside the learner's level are not counted here; the setup pages name them.
+ */
+function DueForReview() {
+  const [due, setDue] = useState<{ chords: number; scales: number; route: Route } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      loadChordDrillPrefs(),
+      loadChordStats(),
+      loadScaleDrillPrefs(),
+      loadScaleStats(),
+    ]).then(([chordPrefs, chordStats, scalePrefs, scaleStats]) => {
+      if (cancelled) return;
+      const chords = dueChords(chordStats, chordPrefs).kinds;
+      const scales = dueScales(scaleStats, scalePrefs).kinds;
+      setDue({
+        chords: chords.length,
+        scales: scales.length,
+        route:
+          chords.length > 0
+            ? chordReviewRoute(chordPrefs, chords)
+            : scaleReviewRoute(scalePrefs, scales),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!due || due.chords + due.scales === 0) return null;
+  const what = [
+    due.chords === 1 ? t('1 chord') : due.chords > 1 ? t('{n} chords', { n: due.chords }) : '',
+    due.scales === 1 ? t('1 scale') : due.scales > 1 ? t('{n} scales', { n: due.scales }) : '',
+  ].filter(Boolean);
+  return (
+    <div className="due-review" data-testid="due-review">
+      <p>{t('Due for review: {what}', { what: what.join(', ') })}</p>
+      <a className="button" href={href(due.route)}>
+        <Play /> {t('Review now')}
+      </a>
     </div>
   );
 }

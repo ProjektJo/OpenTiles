@@ -312,6 +312,7 @@ describe('chord drill generator', () => {
         focus: ['3.min', '0.dim7'],
         seed: 99,
       }),
+      opts({ level: 3, focus: ['3.min', '8.maj'], only: true, seed: 5 }),
     ];
     for (const o of cases) {
       const id = chordDrillId(o);
@@ -319,6 +320,9 @@ describe('chord drill generator', () => {
       expect(parseChordDrillId(id)).toEqual(normaliseChordDrillOptions(o));
     }
     expect(chordDrillId(opts({ level: 3, seed: 12345 }))).toBe('chords.l3.hr.n16.t60.s12345');
+    expect(chordDrillId(opts({ level: 3, focus: ['3.min'], only: true, seed: 5 }))).toBe(
+      'chords.l3.hr.n16.t60.f3-min.x1.s5',
+    );
     expect(isChordDrillId('treble.0.1.notes.8.12345')).toBe(false);
     expect(parseDrillId('treble.0.1.notes.8.12345').clef).toBe('treble');
     // Unknown or broken ids fall back to defaults.
@@ -338,6 +342,30 @@ describe('chord drill generator', () => {
       count(base, '3.min') + count(base, '8.maj'),
     );
     expect(new Set(focused.map((c) => chordKind(c.chord))).size).toBe(24);
+  });
+
+  it('draws only the due chords in a review, each once a turn (P7-27)', () => {
+    const due = ['3.min', '8.maj', '0.maj'];
+    for (let seed = 1; seed <= 5; seed++) {
+      const kinds = drillChords(opts({ level: 3, count: 16, seed, focus: due, only: true })).map(
+        (c) => chordKind(c.chord),
+      );
+      expect(new Set(kinds)).toEqual(new Set(due));
+      for (let i = 0; i + 3 <= kinds.length; i += 3) {
+        expect(new Set(kinds.slice(i, i + 3)).size).toBe(3);
+      }
+    }
+    // Due chords the set does not have leave the whole set; a drill without `only` is unchanged.
+    const level1 = drillChords(
+      opts({ level: 1, count: 12, seed: 2, focus: ['1.dim'], only: true }),
+    );
+    expect(new Set(level1.map((c) => chordKind(c.chord))).size).toBe(6);
+    expect(drillChords(opts({ level: 3, seed: 3, focus: due, only: false }))).toEqual(
+      drillChords(opts({ level: 3, seed: 3, focus: due })),
+    );
+    // A day's reviews fit in the focus.
+    const many = Array.from({ length: 24 }, (_, i) => `${i % 12}.${i < 12 ? 'maj' : 'min'}`);
+    expect(normaliseChordDrillOptions({ focus: many }).focus).toHaveLength(20);
   });
 
   it('keeps the hand near the last chord in the voice-leading mode', () => {

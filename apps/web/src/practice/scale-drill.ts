@@ -191,6 +191,7 @@ export function scaleDrillOptions(
     count: prefs.count,
     tempo: prefs.tempo,
     focus,
+    only: false,
     seed,
   };
 }
@@ -361,8 +362,9 @@ export function loadScaleDrill(
     scales: drill.scales,
     steps: scaleSteps(drill),
     names: drill.scales.map((s) => scaleName(s.scale)),
-    title:
-      level === 'custom'
+    title: options.only
+      ? t('Due for review')
+      : level === 'custom'
         ? scaleLevelName('custom')
         : t('Level {n}: {name}', { n: level, name: scaleLevelName(level) }),
   };
@@ -390,10 +392,11 @@ export async function recordScaleRound(
   return { before, after };
 }
 
+/** The scales the learner's choices draw, as `scaleStats` keys them. */
+export const drawnScaleKinds = (prefs: ScaleDrillPrefs): Set<string> =>
+  new Set(scaleDrillEntries(scaleDrillOptions(prefs, 1)).map((e) => `${e.pitchClass}.${e.kind}`));
+
 /** The weak scales among those the learner's choices draw, as the generator's `focus`. */
 export function weakScaleFocus(stats: ScaleStats, prefs: ScaleDrillPrefs): string[] {
-  const allowed = new Set(
-    scaleDrillEntries(scaleDrillOptions(prefs, 1)).map((e) => `${e.pitchClass}.${e.kind}`),
-  );
-  return weakScales(stats, allowed).map((k) => k.kind);
+  return weakScales(stats, drawnScaleKinds(prefs)).map((k) => k.kind);
 }

@@ -60,9 +60,9 @@ they arrive.
 
 **Alongside** (built by a contributor)
 
-- **P7-27, P7-29 to P7-33** Spaced review and hard bars: "Due for review" on the Drills page, a
-  piece's bar runs and the hard-bar marks ([spaced-review.md](docs/phase-7/spaced-review.md), ADR
-  0026). The schedule (P7-26) and the hard-bar rule (P7-28) are in.
+- **P7-29 to P7-33** Spaced review and hard bars: a piece's bar runs and the hard-bar marks
+  ([spaced-review.md](docs/phase-7/spaced-review.md), ADR 0026). The schedule (P7-26), the
+  hard-bar rule (P7-28) and "Due for review" on the Drills page (P7-27) are in.
 
 **Next**
 
@@ -124,6 +124,7 @@ and the device; a failure becomes a task at the top of the queue.
 | v0.4.0: scale drills from memory and in falling keys; fingers readable at ⅓ width      | Both   | P7-20, P7-24    | open                                 |
 | v0.5.0: an imported score's p and f, hairpins and sf heard in the Player               | Both   | P6-16           | open                                 |
 | v0.6.0: the new home-screen icon; the practice header and bar at ⅓ width, upright      | Both   | P5-09           | open                                 |
+| "Due for review" and Review now on the Drills page, also at ⅓ width                    | Both   | P7-27           | open                                 |
 | Frame time on an older iPad (falling notes, score, Player)                             | Both   | P4-11, P5-10    | open                                 |
 | The richer piano and the Player's room; stand mode                                     | Both   | P6-15, P6-17    | open                                 |
 | The Player over USB audio, and whether the microphone hears it                         | Safari | P6-13           | open                                 |
@@ -925,7 +926,7 @@ contributor builds the tasks and the maintainer reviews each pull request.
 
 - [x] **P7-25** (GOV) The plan, the maintainer's answers and ADR 0026.
 - [x] **P7-26** (PRAC) The review schedule: SM-2 replayed from `chordStats` and `scaleStats`, one review a day, early passes and slips of under three tries ignored, 20 a day.
-- [ ] **P7-27** (APP) "Due for review" on the Drills page, and Review now drawing only the due kinds.
+- [x] **P7-27** (APP) "Due for review" on the Drills page, and Review now drawing only the due kinds.
 - [x] **P7-28** (PRAC) Hard bars: bar runs, a bar hard when 2 of the last 3 runs that played it had missed or wrong notes, loops around them.
 - [ ] **P7-29** (STORE) A piece's last ten runs (not loop passes) in its progress and in the backup merge.
 - [ ] **P7-30** (APP) Hard bars marked before a run, and Practise the hard bars.
@@ -958,6 +959,14 @@ Record the outcome as an ADR in `docs/adr/` and tick it here.
 
 ## Changelog
 
+- **2026-10-29** — P7-27: "Due for review" on the Drills page. When chords or scales that the
+  learner's level (or own set) draws are due, a line above the cards says how many, and **Review
+  now** opens the chord drill with the learner's own choices, asking each due chord once, as a flash
+  card is asked once; the scales come once no chords are due. A review round leads back to the
+  Drills page and does not run on into an ordinary round. On the chord and scale pages the weak line
+  also says how many are due, and how many more are due outside the level or set. Drill ids gain
+  `x1` for "only the focus kinds", and a drill's focus holds up to 20 kinds, a day's reviews.
+  Nothing new is stored.
 - **2026-10-29** — The queue: P5-09 is released (v0.6.0), so the import gaps are Now and
   sight-reading Next. The contributor's spaced review moves from Later item 3 to a line of its own,
   **Alongside**, right after Now: the maintainer chose "right after P5-09, built by a contributor",

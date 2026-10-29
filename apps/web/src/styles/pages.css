@@ -796,6 +796,20 @@ button.copy-link--done {
   font-size: var(--text-sm);
 }
 
+/* "Due for review" above the drill cards (P7-27): one quiet line, only when something is due. */
+.due-review {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.due-review p {
+  margin: 0;
+}
+
 /* The drills hub (P7-04): a card for each kind of drill. */
 .drill-cards {
   display: grid;

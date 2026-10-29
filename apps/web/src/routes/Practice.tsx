@@ -391,6 +391,9 @@ function PracticeView({
   // So does a scale drill (P7-20).
   const chordDrill = drill?.kind === 'chords' ? drill : null;
   const scaleDrill = drill?.kind === 'scales' ? drill : null;
+  // A review of the due chords or scales (P7-27) leads back to the Drills page, where it started,
+  // and does not run on into an ordinary round.
+  const review = (chordDrill ?? scaleDrill)?.drill.options.only === true;
   const prefs = useMemo<PracticePrefs>(() => {
     if (!drill) return savedPrefs;
     const atTempo = drill.kind !== 'sight' && drill.prefs.pace === 'tempo';
@@ -672,6 +675,7 @@ function PracticeView({
   const finished = status.finished;
   useEffect(() => {
     if (!finished || !drill?.prefs.endless) return;
+    if (drill.kind !== 'sight' && drill.drill.options.only) return;
     // A chord or scale round waits for its result to be kept, so the next round has the new tempo.
     if (drill.kind === 'chords' && !chordRound) return;
     if (drill.kind === 'scales' && !scaleRound) return;
@@ -1158,17 +1162,19 @@ function PracticeView({
   const backRoute: Route =
     source === 'library'
       ? { name: 'library' }
-      : drill
-        ? {
-            name: 'drills',
-            page:
-              drill.kind === 'chords'
-                ? 'chords'
-                : drill.kind === 'scales'
-                  ? 'scales'
-                  : 'sight-reading',
-          }
-        : { name: 'home' };
+      : review
+        ? { name: 'drills' }
+        : drill
+          ? {
+              name: 'drills',
+              page:
+                drill.kind === 'chords'
+                  ? 'chords'
+                  : drill.kind === 'scales'
+                    ? 'scales'
+                    : 'sight-reading',
+            }
+          : { name: 'home' };
   // Four or more notes at once on the microphone are best effort until P7-10 has numbers (Q6).
   const manyNotes = chordDrill !== null && mostNotesAtOnce(chordDrill.drill.chords) > 3;
   const nameOnly = chordDrill?.prefs.show === 'sheet' && chordDrill.prefs.names === 'name-only';
@@ -1909,11 +1915,13 @@ function PracticeView({
                       <RotateCcw /> {t('Play again')}
                     </button>
                     <a className="button" href={href(backRoute)}>
-                      {drill.kind === 'chords'
-                        ? t('Change the chords')
-                        : drill.kind === 'scales'
-                          ? t('Change the scales')
-                          : t('Change the drill')}
+                      {review
+                        ? t('All drills')
+                        : drill.kind === 'chords'
+                          ? t('Change the chords')
+                          : drill.kind === 'scales'
+                            ? t('Change the scales')
+                            : t('Change the drill')}
                     </a>
                   </>
                 ) : (
@@ -1927,7 +1935,7 @@ function PracticeView({
                   </>
                 )}
               </div>
-              {drill?.prefs.endless && (
+              {drill?.prefs.endless && !review && (
                 <p className="muted" role="status">
                   {drill.kind !== 'sight'
                     ? t('The next round starts in a moment.')

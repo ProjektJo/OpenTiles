@@ -26,6 +26,7 @@ import {
   weakScaleFocus,
 } from '../practice/scale-drill';
 import type { ScaleDrillPrefs } from '../practice/scale-drill';
+import { dueNote, dueScales } from '../practice/review';
 import { pitchClassName } from '../lib/notes';
 import { href } from '../lib/router';
 import { Setting, Toggle } from '../ui/SettingRow';
@@ -62,6 +63,7 @@ export function ScaleDrills() {
 
   const focus = useMemo(() => (stats && p.weak ? weakScaleFocus(stats, p) : []), [stats, p]);
   const weakest = useMemo(() => (stats ? weakScaleFocus(stats, p) : []), [stats, p]);
+  const due = useMemo(() => (stats ? dueScales(stats, p) : null), [stats, p]);
   const totals = useMemo(
     () => new Map((stats ? scaleTotals(stats) : []).map((k) => [k.kind, k])),
     [stats],
@@ -279,7 +281,7 @@ export function ScaleDrills() {
         />
         <Toggle
           label={t('Practise my weak scales')}
-          description={
+          description={[
             weakest.length > 0
               ? t('More often: {scales}.', {
                   scales: weakest
@@ -293,8 +295,11 @@ export function ScaleDrills() {
                 })
               : t(
                   'Scales under 80 % right at the first try come more often, once you have played a few rounds.',
-                )
-          }
+                ),
+            dueNote(due, custom),
+          ]
+            .filter(Boolean)
+            .join(' ')}
           checked={p.weak}
           onChange={(weak) => set({ weak })}
         />

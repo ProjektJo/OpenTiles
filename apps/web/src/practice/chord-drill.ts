@@ -174,6 +174,7 @@ export function chordDrillOptions(
     tempo: prefs.tempo,
     near: prefs.near,
     focus,
+    only: false,
     seed,
   };
 }
@@ -289,8 +290,9 @@ export function loadChordDrill(
     musicxml: drill.musicxml,
     chords: drill.chords,
     names: drill.chords.map((c) => chordLabel(c.chord)),
-    title:
-      level === 'custom'
+    title: options.only
+      ? t('Due for review')
+      : level === 'custom'
         ? levelName('custom')
         : t('Level {n}: {name}', { n: level, name: levelName(level) }),
   };
@@ -319,10 +321,11 @@ export async function recordChordRound(
   return { before, after };
 }
 
+/** The kinds of chord the learner's choices draw, as `chordStats` keys them. */
+export const drawnChordKinds = (prefs: ChordDrillPrefs): Set<string> =>
+  new Set(drillEntries(chordDrillOptions(prefs, 1)).map((e) => `${e.pitchClass}.${e.quality}`));
+
 /** The weak chords among those the learner's choices draw, as the generator's `focus`. */
 export function weakFocus(stats: ChordStats, prefs: ChordDrillPrefs): string[] {
-  const allowed = new Set(
-    drillEntries(chordDrillOptions(prefs, 1)).map((e) => `${e.pitchClass}.${e.quality}`),
-  );
-  return weakChords(stats, allowed).map((k) => k.kind);
+  return weakChords(stats, drawnChordKinds(prefs)).map((k) => k.kind);
 }

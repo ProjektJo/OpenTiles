@@ -1195,4 +1195,15 @@ export const de: Readonly<Record<string, string>> = {
   'Scales under 80 % right at the first try come more often, once you have played a few rounds.':
     'Tonleitern unter 80 % beim ersten Versuch richtig kommen öfter, sobald du ein paar Runden gespielt hast.',
   'Start scales': 'Tonleitern starten',
+  // Spaced review (P7-27)
+  'Due for review: {what}': 'Zum Wiederholen fällig: {what}',
+  '1 chord': '1 Akkord',
+  '{n} chords': '{n} Akkorde',
+  '1 scale': '1 Tonleiter',
+  '{n} scales': '{n} Tonleitern',
+  'Review now': 'Jetzt wiederholen',
+  'Due for review': 'Zum Wiederholen fällig',
+  'Due for review: {n}.': 'Zum Wiederholen fällig: {n}.',
+  'Due outside this level: {n}.': 'Außerhalb dieser Stufe fällig: {n}.',
+  'Due outside this set: {n}.': 'Außerhalb deiner Auswahl fällig: {n}.',
 };

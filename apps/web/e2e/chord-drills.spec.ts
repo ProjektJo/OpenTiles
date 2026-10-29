@@ -304,3 +304,37 @@ test('a chord pressed with three fingers at once on the on-screen keys', async (
   await touch(second);
   await expect(page.getByTestId('chord-result')).toContainText('2 of 2 at the first try');
 });
+
+test('chords that are due show on the Drills page, and a review draws only them (P7-27)', async ({
+  page,
+}) => {
+  // C major and A minor, right in a round two days ago, were due again after a day.
+  await page.addInitScript(() => {
+    const key = 'opentiles:setting:chordStats';
+    if (localStorage.getItem(key) !== null) return;
+    const kinds = { '0.maj': [4, 4, 0], '9.min': [4, 4, 0] };
+    const at = Date.now() - 2 * 86_400_000;
+    const rounds = [{ at, chords: 8, firstTry: 8, perMinute: 20, kinds }];
+    localStorage.setItem(key, JSON.stringify({ version: 1, rounds }));
+  });
+  await page.goto('./#/drills/chords');
+  await expect(page.getByText('Due for review: 2.')).toBeVisible();
+  await page.getByRole('link', { name: 'All drills' }).click();
+  const due = page.getByTestId('due-review');
+  await expect(due).toContainText('Due for review: 2 chords');
+  await due.getByRole('link', { name: 'Review now' }).click();
+  await expect(page).toHaveURL(
+    /#\/practice\/drill\/chords\.l1\.hr\.n2\.t60\.f0-maj_9-min\.x1\.s\d+$/,
+  );
+  const id = decodeURIComponent(page.url().split('/').pop() ?? '');
+  await expect(score(page)).toBeVisible({ timeout: 20_000 });
+  // Each due chord once, as a flash card is asked once.
+  const names = await page.locator('[data-testid="score-strip"] g.dir').allTextContents();
+  expect(names.map((n) => n.trim()).sort()).toEqual(['Am', 'C']);
+  for (const keys of chordKeys(id)) await playChord(page, keys);
+  await expect(page.getByTestId('chord-result')).toContainText('2 of 2 at the first try');
+  // After the review they are no longer due, and the Drills page says nothing.
+  await page.getByRole('link', { name: 'All drills' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Drills' })).toBeVisible();
+  await expect(due).toHaveCount(0);
+});

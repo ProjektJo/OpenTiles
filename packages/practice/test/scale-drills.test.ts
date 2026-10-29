@@ -64,6 +64,22 @@ describe('scale drill generator (P7-17)', () => {
     ]);
   });
 
+  it('draws only the due scales in a review, each once a turn (P7-27)', () => {
+    const due = ['7.major', '9.natural-minor'];
+    for (let seed = 1; seed <= 5; seed++) {
+      const kinds = drillScales(options({ level: 1, count: 6, seed, focus: due, only: true })).map(
+        (s) => scaleKind(s.scale),
+      );
+      expect(new Set(kinds)).toEqual(new Set(due));
+      for (let i = 1; i < kinds.length; i++) expect(kinds[i]).not.toBe(kinds[i - 1]);
+    }
+    // Due scales the level does not have leave the whole level.
+    const kinds = drillScales(options({ level: 1, count: 4, focus: ['1.blues'], only: true })).map(
+      (s) => scaleKind(s.scale),
+    );
+    expect(new Set(kinds).size).toBe(4);
+  });
+
   it('leaves the melodic minor out of contrary motion', () => {
     const kinds = scaleDrillEntries(options({ level: 8, hands: 'contrary' })).map((e) => e.kind);
     expect(kinds).not.toContain('melodic-minor');
@@ -185,6 +201,7 @@ describe('scale drill generator (P7-17)', () => {
         focus: ['1.blues'],
         seed: 3,
       }),
+      options({ level: 2, focus: ['2.major'], only: true, seed: 4 }),
     ]) {
       const id = scaleDrillId(o);
       expect(isScaleDrillId(id)).toBe(true);
@@ -192,6 +209,9 @@ describe('scale drill generator (P7-17)', () => {
       expect(parseScaleDrillId(id)).toEqual(o);
     }
     expect(scaleDrillId(options({ seed: 5 }))).toBe('scales.l1.hr.o1.d4.n4.t80.s5');
+    expect(scaleDrillId(options({ focus: ['9.natural-minor'], only: true, seed: 5 }))).toBe(
+      'scales.l1.hr.o1.d4.n4.t80.f9-natural-minor.x1.s5',
+    );
     expect(isScaleDrillId('treble.0.1.notes.8.1')).toBe(false);
     expect(parseDrillId('treble.0.1.notes.8.1').clef).toBe('treble');
     expect(parseScaleDrillId('scales.lzz.n999.t7')).toEqual(

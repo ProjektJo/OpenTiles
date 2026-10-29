@@ -27,6 +27,7 @@ import {
   weakFocus,
 } from '../practice/chord-drill';
 import type { ChordDrillPrefs } from '../practice/chord-drill';
+import { dueChords, dueNote } from '../practice/review';
 import { pitchClassName } from '../lib/notes';
 import { href } from '../lib/router';
 import { Setting, Toggle } from '../ui/SettingRow';
@@ -71,6 +72,7 @@ export function ChordDrills() {
 
   const focus = useMemo(() => (stats && p.weak ? weakFocus(stats, p) : []), [stats, p]);
   const weakest = useMemo(() => (stats ? weakFocus(stats, p) : []), [stats, p]);
+  const due = useMemo(() => (stats ? dueChords(stats, p) : null), [stats, p]);
   const totals = useMemo(
     () => new Map((stats ? kindTotals(stats) : []).map((k) => [k.kind, k])),
     [stats],
@@ -314,7 +316,7 @@ export function ChordDrills() {
         )}
         <Toggle
           label={t('Practise my weak chords')}
-          description={
+          description={[
             weakest.length > 0
               ? t('More often: {chords}.', {
                   chords: weakest
@@ -328,8 +330,11 @@ export function ChordDrills() {
                 })
               : t(
                   'Chords under 80 % right at the first try come more often, once you have played a few rounds.',
-                )
-          }
+                ),
+            dueNote(due, custom),
+          ]
+            .filter(Boolean)
+            .join(' ')}
           checked={p.weak}
           onChange={(weak) => set({ weak })}
         />

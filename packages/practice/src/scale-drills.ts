@@ -41,6 +41,8 @@ export interface ScaleDrillOptions {
   tempo: number;
   /** Scale keys (`pitchClass.kind`) drawn more often: the learner's weak scales. */
   focus: string[];
+  /** Draw only the `focus` scales, each as often: a review of the due ones (P7-27). */
+  only: boolean;
   seed: number;
 }
 
@@ -59,6 +61,7 @@ export const SCALE_DRILL_DEFAULTS: Readonly<ScaleDrillOptions> = Object.freeze({
   count: 4,
   tempo: 80,
   focus: [],
+  only: false,
   seed: 1,
 });
 
@@ -161,6 +164,7 @@ export function normaliseScaleDrillOptions(
     focus: Array.isArray(value.focus)
       ? value.focus.filter((k): k is string => typeof k === 'string' && /^\d+\.[a-z-]+$/.test(k))
       : [],
+    only: value.only === true,
     seed: int(value.seed, 0, 2 ** 31 - 1, d.seed),
   };
 }
@@ -177,14 +181,18 @@ function shuffled<T>(items: readonly T[], rand: () => number): T[] {
 
 /**
  * Draws the round's scales: every scale in the set comes once before any comes again (the
- * learner's weak scales, `focus`, two more times), never the same scale twice running.
+ * learner's weak scales, `focus`, two more times), never the same scale twice running. With `only`,
+ * the set is the `focus` scales it has, each once a turn; when it has none of them, the whole set.
  */
 function drawEntries(o: ScaleDrillOptions, rand: () => number): ScaleEntry[] {
-  const pool = drillEntries(o);
   const focus = new Set(o.focus);
+  const inFocus = (e: ScaleEntry) => focus.has(`${e.pitchClass}.${e.kind}`);
+  const all = drillEntries(o);
+  const only = o.only ? all.filter(inFocus) : [];
+  const pool = only.length > 0 ? only : all;
   const bagOf = () =>
     shuffled(
-      pool.flatMap((e) => (focus.has(`${e.pitchClass}.${e.kind}`) ? [e, e, e] : [e])),
+      pool.flatMap((e) => (only.length === 0 && inFocus(e) ? [e, e, e] : [e])),
       rand,
     );
   const out: ScaleEntry[] = [];
@@ -541,6 +549,7 @@ export function scaleDrillId(options: ScaleDrillOptions): string {
     `t${o.tempo}`,
   );
   if (o.focus.length > 0) parts.push(`f${o.focus.map((k) => k.replace('.', '-')).join('_')}`);
+  if (o.only) parts.push('x1');
   parts.push(`s${o.seed}`);
   return parts.join('.');
 }
@@ -574,6 +583,7 @@ export function parseScaleDrillId(id: string): ScaleDrillOptions {
       .split('_')
       .filter(Boolean)
       .map((k) => k.replace('-', '.')),
+    only: fields.get('x') === '1',
     seed: fields.get('s'),
   });
 }

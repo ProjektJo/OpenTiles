@@ -41,6 +41,8 @@ export interface ChordDrillOptions {
   near: boolean;
   /** Chord keys (`pitchClass.quality`) drawn more often: the learner's weak chords (P7-08). */
   focus: string[];
+  /** Draw only the `focus` chords, each as often: a review of the due ones (P7-27). */
+  only: boolean;
   seed: number;
 }
 
@@ -62,6 +64,7 @@ export const CHORD_DRILL_DEFAULTS: Readonly<ChordDrillOptions> = Object.freeze({
   tempo: 60,
   near: false,
   focus: [],
+  only: false,
   seed: 1,
 });
 
@@ -173,11 +176,13 @@ export function normaliseChordDrillOptions(
     count: int(value.count, 1, 64, d.count),
     tempo: Math.round(tempo / CHORD_TEMPO_STEP) * CHORD_TEMPO_STEP,
     near: value.near === true,
+    // Up to a day's reviews (`MAX_REVIEWS`, P7-27).
     focus: Array.isArray(value.focus)
       ? value.focus
           .filter((k): k is string => typeof k === 'string' && /^\d{1,2}\.[a-z0-9]+$/.test(k))
-          .slice(0, 12)
+          .slice(0, 20)
       : [],
+    only: value.only === true,
     seed: int(value.seed, 0, 2 ** 31 - 1, d.seed),
   };
 }
@@ -217,14 +222,18 @@ function shuffled<T>(items: readonly T[], rand: () => number): T[] {
 /**
  * Draws the drill's chords: every kind in the set comes once before any comes again (the learner's
  * weak chords, `focus`, two more times), never the same chord twice running and never three of a
- * quality running. A set too small to keep a rule relaxes it rather than stopping.
+ * quality running. With `only`, the set is the `focus` chords it has, each once a turn; when it has
+ * none of them, the whole set. A set too small to keep a rule relaxes it rather than stopping.
  */
 function drawEntries(o: ChordDrillOptions, rand: () => number): ChordEntry[] {
-  const pool = drillEntries(o);
   const focus = new Set(o.focus);
+  const inFocus = (e: ChordEntry) => focus.has(`${e.pitchClass}.${e.quality}`);
+  const all = drillEntries(o);
+  const only = o.only ? all.filter(inFocus) : [];
+  const pool = only.length > 0 ? only : all;
   const bagOf = () =>
     shuffled(
-      pool.flatMap((e) => (focus.has(`${e.pitchClass}.${e.quality}`) ? [e, e, e] : [e])),
+      pool.flatMap((e) => (only.length === 0 && inFocus(e) ? [e, e, e] : [e])),
       rand,
     );
   const out: ChordEntry[] = [];
@@ -422,6 +431,7 @@ export function chordDrillId(options: ChordDrillOptions): string {
   parts.push(`h${HANDS_CODE[o.hands]}`, `n${o.count}`, `t${o.tempo}`);
   if (o.near) parts.push('v1');
   if (o.focus.length > 0) parts.push(`f${o.focus.map((k) => k.replace('.', '-')).join('_')}`);
+  if (o.only) parts.push('x1');
   parts.push(`s${o.seed}`);
   return parts.join('.');
 }
@@ -457,6 +467,7 @@ export function parseChordDrillId(id: string): ChordDrillOptions {
       .split('_')
       .filter(Boolean)
       .map((k) => k.replace('-', '.')),
+    only: fields.get('x') === '1',
     seed: fields.get('s'),
   });
 }
